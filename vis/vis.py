@@ -15,6 +15,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import contextily as ctx
+from IPython.display import display
+import matplotlib.pyplot as plt
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'script_config.ini'))
@@ -43,7 +45,7 @@ def plot_aggregated_engineering_metrics(data):
         'Random Variation', 'Antenna Gain', 'EIRP',
         'Received Power', 'Noise', 'Carrier-to-Noise-Ratio',
         'Spectral Efficiency', 'Channel Capacity',
-        'Aggregate Channel Capacity', 'Area Capacity'
+        'Aggregate Channel Capacity', 'Area Capacity', 'Capacity per satellite'
     ]
 
     data['Channel Capacity'] = round(data['Channel Capacity'] / 1e3,2)
@@ -87,7 +89,7 @@ def plot_aggregated_engineering_metrics(data):
     plot = sns.relplot(
         x="Number of Satellites", y='Value', linewidth=1.2, hue='Constellation',
         col="Metric", col_wrap=2,
-        palette=sns.color_palette("bright", 3),
+        palette=sns.color_palette("bright", 4),
         kind="line", data=long_data,
         facet_kws=dict(sharex=False, sharey=False), legend='full'#, ax=ax
     )
@@ -124,6 +126,7 @@ def process_capacity_data(data):
         'starlink',
         'oneweb',
         'kuiper',
+        'myconstellation',
     ]
 
     for constellation in constellations:
@@ -327,6 +330,74 @@ def plot_regions_by_geotype(data, regions):
 
     plt.close(fig)
 
+def plot_online_user_by_geotype(data, regions):
+    """
+
+    """
+    #TODO LOAD global population table
+    i=0
+    for datapoint in data['online_customer']:
+        if type(datapoint) == str:
+            datapoint = datapoint.strip("[]")
+            data['online_customer'].loc[i] = round(float(datapoint))
+            #print(data['online_customer'].loc[i])
+        
+        i+=1
+
+    #data['online_customer'] = round(data['online_customer'])
+    data = data[['regions', 'online_customer','online_customer_density']]
+    regions = regions[['GID_id', 'geometry']]
+
+    regions = regions.merge(data, left_on='GID_id', right_on='regions')
+    regions.reset_index(drop=True, inplace=True)
+    #print(regions)
+
+    n = len(regions)
+
+    fig, [ax1,ax2] = plt.subplots(2, 1)
+    minx, miny, maxx, maxy = regions.total_bounds
+    ax1.set_xlim(minx, maxx)
+    ax1.set_ylim(miny-25, maxy)
+
+    regions.plot(column='online_customer', ax=ax1, cmap='inferno_r',
+        linewidth=0,legend = True, edgecolor='grey',vmax = 3000)
+
+    satellite_position = pd.read_csv("data/satellite_position.csv")
+    satellite_position_gpd = gpd.GeoDataFrame(satellite_position, geometry=gpd.points_from_xy(satellite_position.longitude,satellite_position.latitude ))
+    new_df = satellite_position_gpd.copy()
+    new_df['geometry'] = new_df['geometry'].buffer(1)
+    # satellite_position_gpd.plot(ax=ax, marker='o', color='red', markersize=5)
+    new_df.plot(ax=ax1, facecolor="none", edgecolor="black")
+
+    #ctx.add_basemap(ax, crs=regions.crs, source=ctx.providers.CartoDB.Voyager)
+    
+    ax2.set_xlim(minx, maxx)
+    ax2.set_ylim(miny-25, maxy)
+    regions.plot(column='online_customer_density', ax=ax2, cmap='inferno_r',
+        linewidth=0,legend = True, edgecolor='grey',vmax = 0.01)
+    new_df.plot(ax=ax2, facecolor="none", edgecolor="black")
+
+    fig.suptitle('Online user by Sub-National Region (n={})'.format(n))
+
+    fig.tight_layout()
+    #plt.show()
+    fig.savefig(os.path.join(VIS, 'region_by_online_user.png'))
+
+
+    plt.close(fig)
+
+
+def plot_satellite_usage_result(path):
+    online_user_for_satellite = pd.read_csv(path)
+    online_user_for_satellite = online_user_for_satellite[0:119]/10000*100
+    online_user_for_satellite.hist(bins=20)
+    fig = plt.gcf()
+    fig.suptitle('satellite usage rate', fontsize=20)
+    plt.title('')
+    plt.xlabel('Usage percentage for each satellite(%)')
+    plt.ylabel('Satellite count')
+    fig.savefig(os.path.join(VIS, 'online_user_for_satellite.png'))
+    plt.close(fig)
 
 def plot_capacity_per_user_maps(data, regions):
     """
@@ -341,9 +412,11 @@ def plot_capacity_per_user_maps(data, regions):
 
     sns.set(font_scale=1, font="Times New Roman")
 
-    fig, axs = plt.subplots(3, 1, figsize=(10, 12)) #width height
+    fig, axs = plt.subplots(4, 1, figsize=(10, 12)) #width height
 
     i = 0
+
+    #print(regions.loc[1].geometry.centroid)
 
     for constellation in list(constellations):
 
@@ -356,9 +429,9 @@ def plot_capacity_per_user_maps(data, regions):
 
         metric = 'per_user_capacity'
 
-        # bins = [-1,2,4,6,8,10,12,14,16,18,1e9]
+        bins = [-1,2,4,6,8,10,12,14,16,18,1e9]
         # bins = [-1,5,10,15,20,25,30,35,40,45,1e9]
-        bins = [-1,10,20,30,40,50,60,70,80,90,1e9]
+        # bins = [-1,10,20,30,40,50,60,70,80,90,1e9]
         labels = [
             '<10 Mbps',
             '<20 Mbps',
@@ -411,6 +484,8 @@ def get_letter(constellation):
         return 'B'
     elif constellation == 'Kuiper':
         return 'C'
+    elif constellation == 'myconstellation':
+        return 'D'
     else:
         print('Did not recognize constellation')
 
@@ -440,6 +515,13 @@ if __name__ == '__main__':
         shapes.to_file(path)
     else:
         shapes = gpd.read_file(path, crs='epsg:4326')#[:1000]
+    
+    print("Loading online user data")
+    path = os.path.join(DATA_INTERMEDIATE, 'global_regional_population_lookup.csv')
+    global_data = pd.read_csv(path)
+
+    print("Plotting online user")
+    plot_online_user_by_geotype(global_data, shapes)
 
     print('Loading data by pop density geotype')
     path = os.path.join(RESULTS, 'global_results.csv')
@@ -448,7 +530,11 @@ if __name__ == '__main__':
     print('Plotting population density per area')
     plot_regions_by_geotype(global_results, shapes)
 
-    print('Plotting capacity per user')
-    plot_capacity_per_user_maps(global_results, shapes)
+    print('Plotting online user statistical data for sastellite')
+    path = os.path.join(DATA_INTERMEDIATE, 'online_user_for_sat.csv')
+    plot_satellite_usage_result(path)
+
+    # print('Plotting capacity per user')
+    # plot_capacity_per_user_maps(global_results, shapes)
 
     print('Complete')

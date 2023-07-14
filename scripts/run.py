@@ -10,7 +10,7 @@ import configparser
 import os
 import pandas as pd
 
-from globalsat.sim import system_capacity
+from sim import system_capacity
 from inputs import parameters, lut
 
 CONFIG = configparser.ConfigParser()
@@ -167,6 +167,7 @@ if __name__ == '__main__':
         'Starlink',
         'OneWeb',
         'Kuiper',
+        "myconstellation",
     ]
 
     SCENARIO = [
@@ -194,7 +195,8 @@ if __name__ == '__main__':
     capacity = process_capacity_data(results, CONSTELLATIONS)
 
     path = os.path.join(INTERMEDIATE, 'global_regional_population_lookup.csv')
-    global_data = pd.read_csv(path)
+    #path = os.path.join('data/global_information.csv')
+    global_data = pd.read_csv(path,encoding="Windows 1252")
 
     all_results = []
 
@@ -216,8 +218,9 @@ if __name__ == '__main__':
     all_results.to_csv(path, index=False)
 
     ##process stochastic results
-    path = os.path.join(INTERMEDIATE, 'global_regional_population_lookup.csv')
-    global_data = pd.read_csv(path)#[:1]
+    #path = os.path.join(INTERMEDIATE, 'global_regional_population_lookup.csv')
+    path = os.path.join('data/global_information.csv')
+    global_data = pd.read_csv(path,encoding="Windows 1252")
 
     all_results = []
 
