@@ -11,7 +11,7 @@ parameters = {
     'starlink': {
         'number_of_satellites': 4425,
         'name':'Starlink',
-        'iterations': 100,
+        'iterations': 1,
         'seed_value': 42,
         'mu': 2, #Mean of distribution
         'sigma': 10, #Standard deviation of distribution
@@ -49,7 +49,7 @@ parameters = {
     'oneweb': {
         'number_of_satellites': 720,
         'name': 'OneWeb',
-        'iterations': 100,
+        'iterations': 1,
         'seed_value': 42,
         'mu': 2, #Mean of distribution
         'sigma': 10, #Standard deviation of distribution
@@ -87,7 +87,7 @@ parameters = {
     'kuiper': {
         'number_of_satellites': 3236,
         'name': 'Kuiper',
-        'iterations': 100,
+        'iterations': 1,
         'seed_value': 42,
         'mu': 2, #Mean of distribution
         'sigma': 10, #Standard deviation of distribution
@@ -122,26 +122,53 @@ parameters = {
         'discount_rate': 5,
         'assessment_period': 5
     },
-    # 'telesat': {
-    #     'number_of_satellites': 300,
-    #     'iterations': 5,
-    #     'seed_value': 42,
-    #     'mu': 1, #Mean of distribution
-    #     'sigma': 7.8, #Standard deviation of distribution
-    #     'total_area_earth_km_sq': 510000000, #Area of Earth in km^2
-    #     'portion_of_earth_covered': 0.8, #We assume the poles aren't covered
-    #     'altitude_km': 550, #Altitude of starlink satellites in km
-    #     'dl_frequency': 13.5*10**9, #Downlink frequency in Hertz
-    #     'dl_bandwidth': 0.25*10**9,
-    #     'speed_of_light': 3.0*10**8, #Speed of light in vacuum
-    #     'antenna_diameter': 0.7, #Metres
-    #     'antenna_efficiency': 0.6,
-    #     'power': 30, #dBw
-    #     'losses': 4, #dB
-    # },
+    'myconstellation': {
+        'number_of_satellites': 120,
+        'name': 'myconstellation',
+        'iterations': 1,
+        'seed_value': 42,
+        'mu': 1, #Mean of distribution
+        'sigma': 7.8, #Standard deviation of distribution
+        'total_area_earth_km_sq': 510000000, #Area of Earth in km^2
+        'portion_of_earth_covered': 0.8, #We assume the poles aren't covered
+        'altitude_km': 550, #Altitude of starlink satellites in km
+        'dl_frequency': 13.5*10**9, #Downlink frequency in Hertz
+        'dl_bandwidth': 0.25*10**9,
+        'speed_of_light': 3.0*10**8, #Speed of light in vacuum
+        'antenna_diameter': 0.9, #Metres
+        'antenna_efficiency': 0.8,
+        'power': 25, #dBw
+        'losses': 8, #dB
+        'receiver_gain': 30,
+        'earth_atmospheric_losses': 15, #Rain Attenuation
+        'all_other_losses': 0.53, #All other losses
+        'number_of_channels': 4, #Number of channels per satellite
+        'overbooking_factor': 20, # 1 in 20 users access the network
+        'polarization': 1,
+        'fuel_mass': 218150,
+        'fuel_mass_1': 7360,
+        'fuel_mass_2': 0,
+        'fuel_mass_3': 0,
+        'satellite_launch_cost': 81250000,
+        'ground_station_cost': 0,
+        'spectrum_cost': 0,
+        'regulation_fees': 720000,
+        'digital_infrastructure_cost': 3550000,
+        'ground_station_energy': 0,
+        'subscriber_acquisition': 10000000,
+        'staff_costs': 750000,
+        'research_development': 60000000,
+        'maintenance': 13000000,
+        'discount_rate': 5,
+        'assessment_period_year': 5
+    },
 }
 
 lut = [
+    #(-2.45, 0.434841),
+    #(-1.6, 0,567805),
+    (0.69, 0.889135),
+    (1.97, 1.088581),
     (5.12, 1.647211),
     (5.96, 1.972253),
     (6.54, 1.972253),
