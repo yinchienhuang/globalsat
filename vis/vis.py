@@ -330,22 +330,22 @@ def plot_regions_by_geotype(data, regions):
 
     plt.close(fig)
 
-def plot_online_user_by_geotype(data, regions):
-    """
+def plot_online_user_by_geotype(data, regions, collaborated = 0):
+    extra_cutomer_sys1 = round(data.sum(skipna = True).transfered_customer_sys1)
+    extra_cutomer_sys2 = round(data.sum(skipna = True).transfered_customer_sys2)
 
-    """
-    #TODO LOAD global population table
-    i=0
-    for datapoint in data['online_customer']:
-        if type(datapoint) == str:
-            datapoint = datapoint.strip("[]")
-            data['online_customer'].loc[i] = round(float(datapoint))
-            #print(data['online_customer'].loc[i])
-        
-        i+=1
+    total_customer_sys1 = round(data.sum(skipna = True).online_customer_sys1)
+    total_customer_sys2 = round(data.sum(skipna = True).online_customer_sys2)
+    print("total customer sys1: ",total_customer_sys1)
+    print("total customer sys2: ",total_customer_sys2)
+    print("transferred customer sys1: ",extra_cutomer_sys1)
+    print("transferred customer sys2: ",extra_cutomer_sys2)
+
+    with open('vis/result.txt', 'a') as the_file:
+        the_file.write(str(total_customer_sys1)+" "+str(total_customer_sys2)+"\n")
 
     #data['online_customer'] = round(data['online_customer'])
-    data = data[['regions', 'online_customer','online_customer_density']]
+    data = data[['regions', 'online_customer_sys1','online_customer_density_sys1','online_customer_sys2','online_customer_density_sys2','transfered_customer_sys1','transfered_customer_sys2']]
     regions = regions[['GID_id', 'geometry']]
 
     regions = regions.merge(data, left_on='GID_id', right_on='regions')
@@ -354,49 +354,91 @@ def plot_online_user_by_geotype(data, regions):
 
     n = len(regions)
 
-    fig, [ax1,ax2] = plt.subplots(2, 1)
+    fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(nrows=2, ncols=2)
     minx, miny, maxx, maxy = regions.total_bounds
     ax1.set_xlim(minx, maxx)
     ax1.set_ylim(miny-25, maxy)
+    ax1.title.set_text('Transfered customer count sys1')
+    ax2.set_xlim(minx, maxx)
+    ax2.set_ylim(miny-25, maxy)
+    ax2.title.set_text('Transfered customer count sys2')
 
-    regions.plot(column='online_customer', ax=ax1, cmap='inferno_r',
-        linewidth=0,legend = True, edgecolor='grey',vmax = 3000)
+    regions.plot(column='transfered_customer_sys1', ax=ax1, cmap='inferno_r',
+        linewidth=0,legend = True, edgecolor='blue',vmax = 3000)
+    regions.plot(column='transfered_customer_sys2', ax=ax2, cmap='inferno_r',
+        linewidth=0,legend = True, edgecolor='red',vmax = 3000)
 
-    satellite_position = pd.read_csv("data/satellite_position.csv")
-    satellite_position_gpd = gpd.GeoDataFrame(satellite_position, geometry=gpd.points_from_xy(satellite_position.longitude,satellite_position.latitude ))
-    new_df = satellite_position_gpd.copy()
-    new_df['geometry'] = new_df['geometry'].buffer(1)
+
+    satellite_position1 = pd.read_csv("data/satellite_position1.csv")
+    satellite_position1_gpd = gpd.GeoDataFrame(satellite_position1, geometry=gpd.points_from_xy(satellite_position1.longitude,satellite_position1.latitude ))
+    CS1 = satellite_position1_gpd.copy()
+    CS1['geometry'] = CS1['geometry'].buffer(1)
+    CS1.plot(ax=ax1, facecolor="none", edgecolor="blue")
+
+    satellite_position2 = pd.read_csv("data/satellite_position2.csv")
+    satellite_position2_gpd = gpd.GeoDataFrame(satellite_position2, geometry=gpd.points_from_xy(satellite_position2.longitude,satellite_position2.latitude ))
+    CS2 = satellite_position2_gpd.copy()
+    CS2['geometry'] = CS2['geometry'].buffer(1)
     # satellite_position_gpd.plot(ax=ax, marker='o', color='red', markersize=5)
-    new_df.plot(ax=ax1, facecolor="none", edgecolor="black")
+    CS2.plot(ax=ax2, facecolor="none", edgecolor="red")
 
     #ctx.add_basemap(ax, crs=regions.crs, source=ctx.providers.CartoDB.Voyager)
     
-    ax2.set_xlim(minx, maxx)
-    ax2.set_ylim(miny-25, maxy)
-    regions.plot(column='online_customer_density', ax=ax2, cmap='inferno_r',
+    ax3.set_xlim(minx, maxx)
+    ax3.set_ylim(miny-25, maxy)
+    regions.plot(column='online_customer_density_sys1', ax=ax3, cmap='inferno_r',
         linewidth=0,legend = True, edgecolor='grey',vmax = 0.01)
-    new_df.plot(ax=ax2, facecolor="none", edgecolor="black")
+    ax3.title.set_text('Customer density map sys1'+" Total customers: "+str(total_customer_sys1))
+    CS1.plot(ax=ax3, facecolor="none", edgecolor="blue")
+
+    ax4.set_xlim(minx, maxx)
+    ax4.set_ylim(miny-25, maxy)
+    regions.plot(column='online_customer_density_sys2', ax=ax4, cmap='inferno_r',
+        linewidth=0,legend = True, edgecolor='grey',vmax = 0.01)
+    ax4.title.set_text('Customer density map sys2'+" Total customers: "+str(total_customer_sys2))
+    CS2.plot(ax=ax4, facecolor="none", edgecolor="red")
 
     fig.suptitle('Online user by Sub-National Region (n={})'.format(n))
 
     fig.tight_layout()
     #plt.show()
-    fig.savefig(os.path.join(VIS, 'region_by_online_user.png'))
-
-
+    filename = os.path.join(VIS, 'region_by_online_user.png')
+    if collaborated == 1:
+        filename = os.path.join(VIS, 'region_by_online_user_col.png')
+    fig.savefig(filename)
     plt.close(fig)
 
 
-def plot_satellite_usage_result(path):
-    online_user_for_satellite = pd.read_csv(path)
-    online_user_for_satellite = online_user_for_satellite[0:119]/10000*100
-    online_user_for_satellite.hist(bins=20)
+def plot_satellite_usage_result(path1,path2,n_satellite):
+    n_sat = n_satellite
+    online_user_for_satellite_sys1 = pd.read_csv(path1)
+    usage_rate_sys1 = round(online_user_for_satellite_sys1[0:n_sat].sum()/(n_sat*10000)*100,2) #in percent
+    online_user_for_satellite_sys1 = online_user_for_satellite_sys1[0:n_sat]/10000*100
+    online_user_for_satellite_sys1.hist(bins=20)
     fig = plt.gcf()
-    fig.suptitle('satellite usage rate', fontsize=20)
+    total_customer_sys1 = int(usage_rate_sys1[0]*n_sat*100)
+    fig.suptitle('satellite usage rate sys1: '+str(usage_rate_sys1[0])+"%"+'\n'+"Total customers: "+str(total_customer_sys1), fontsize=20)
     plt.title('')
+    plt.ylim((0,120))
     plt.xlabel('Usage percentage for each satellite(%)')
     plt.ylabel('Satellite count')
-    fig.savefig(os.path.join(VIS, 'online_user_for_satellite.png'))
+
+    fig.savefig(os.path.join(VIS, 'online_user_for_satellite_sys1.png'))
+    plt.close(fig)
+
+    online_user_for_satellite_sys2 = pd.read_csv(path2)
+    usage_rate_sys2 = round(online_user_for_satellite_sys2[0:n_sat].sum()/(n_sat*10000)*100,2)
+    online_user_for_satellite_sys2 = online_user_for_satellite_sys2[0:n_sat]/10000*100
+    online_user_for_satellite_sys2.hist(bins=20)
+    fig = plt.gcf()
+    total_customer_sys2 = int(usage_rate_sys2[0]*n_sat*100)
+    fig.suptitle('satellite usage rate sys2: '+str(usage_rate_sys2[0])+"%"+'\n'+"Total customers: "+str(total_customer_sys2), fontsize=20)
+    plt.title("")
+    plt.ylim((0,120))
+    plt.xlabel('Usage percentage for each satellite(%)')
+    plt.ylabel('Satellite count')
+
+    fig.savefig(os.path.join(VIS, 'online_user_for_satellite_sys2.png'))
     plt.close(fig)
 
 def plot_capacity_per_user_maps(data, regions):
@@ -521,20 +563,43 @@ if __name__ == '__main__':
     global_data = pd.read_csv(path)
 
     print("Plotting online user")
-    plot_online_user_by_geotype(global_data, shapes)
+    plot_online_user_by_geotype(global_data, shapes, 0)
 
     print('Loading data by pop density geotype')
     path = os.path.join(RESULTS, 'global_results.csv')
     global_results = pd.read_csv(path)#[:1000]
 
-    print('Plotting population density per area')
-    plot_regions_by_geotype(global_results, shapes)
+    #print('Plotting population density per area')
+    #plot_regions_by_geotype(global_results, shapes)
 
     print('Plotting online user statistical data for sastellite')
-    path = os.path.join(DATA_INTERMEDIATE, 'online_user_for_sat.csv')
-    plot_satellite_usage_result(path)
+    path_sys1 = os.path.join(DATA_INTERMEDIATE, 'online_user_for_sat_sys1.csv')
+    path_sys2 = os.path.join(DATA_INTERMEDIATE, 'online_user_for_sat_sys2.csv')
+    plot_satellite_usage_result(path_sys1, path_sys2,120)
 
     # print('Plotting capacity per user')
     # plot_capacity_per_user_maps(global_results, shapes)
 
-    print('Complete')
+    print('Complete1')
+
+
+    print("Loading online user data")
+    path = os.path.join(DATA_INTERMEDIATE, 'global_regional_population_lookup_col.csv')
+    global_data = pd.read_csv(path)
+
+    print("Plotting online user")
+    plot_online_user_by_geotype(global_data, shapes, 1)
+
+    print('Loading data by pop density geotype')
+    path = os.path.join(RESULTS, 'global_results.csv')
+    global_results = pd.read_csv(path)#[:1000]
+
+    #print('Plotting population density per area')
+    #plot_regions_by_geotype(global_results, shapes)
+
+    print('Plotting online user statistical data for sastellite')
+    path_sys1 = os.path.join(DATA_INTERMEDIATE, 'online_user_for_sat_sys1_col.csv')
+    path_sys2 = os.path.join(DATA_INTERMEDIATE, 'online_user_for_sat_sys2_col.csv')
+    plot_satellite_usage_result(path_sys1, path_sys2,120)
+
+    print('Complete2')
